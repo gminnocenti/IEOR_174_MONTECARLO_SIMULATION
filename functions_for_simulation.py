@@ -97,4 +97,14 @@ def rejection_sampling(data,n_samples):
     sampler = SelfRV(kde)
     samples = sampler.sample(n_samples)
     return np.int16(samples) 
+
+def simulate_number_of_products_in_a_order(x_order_sizes,weights,n_samples):
+    # Create a weighted KDE based on order sizes
+    kde = gaussian_kde(x_order_sizes, weights=weights)
+    self_rv = SelfRV(kde)
+
+# Generate a sample of size 1000
+    samples = self_rv.sample(n_samples)
+    return np.int16(samples) 
+
     
