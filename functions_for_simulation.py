@@ -107,4 +107,10 @@ def simulate_number_of_products_in_a_order(x_order_sizes,weights,n_samples):
     samples = self_rv.sample(n_samples)
     return np.int16(samples) 
 
-    
+def simulate_number_of_orders_in_a_day(x_n_orders,weights,n_samples):
+    kde = gaussian_kde(x_n_orders, weights=weights)
+    self_rv = SelfRV(kde)
+
+    # Generate a sample of size 1000
+    samples =  self_rv.sample(n_samples)
+    return np.int16(samples) 
