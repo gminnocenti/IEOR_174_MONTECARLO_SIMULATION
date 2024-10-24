@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from functions_for_simulation import simulate_products_all_orders,rejection_sampling,generate_matrix_simulation,simulate_number_of_products_in_a_order
+from functions_for_simulation import simulate_products_all_orders,rejection_sampling,generate_matrix_simulation,simulate_number_of_products_in_a_order,simulate_number_of_orders_in_a_day
 #Lodad Datasets
 df_number_of_orders_to_deliver=pd.read_csv("SIM_density_number_of_orders_delivered_in_a_day.csv")
 df_number_of_products_in_one_order=pd.read_csv("SIM_number_of_products_in_a_order.csv")
@@ -10,7 +10,7 @@ distance_matrix_distribution_center1 = np.loadtxt("SIM_distribution_center_1_dis
 distance_matrix_distribution_center2 = np.loadtxt("SIM_distribution_center_2_distance_matrix.csv", delimiter=",")
 
 #First simulate the number of orders that will be delivered in the day
-n_orders=rejection_sampling(df_number_of_orders_to_deliver["Number_of_orders_delivered"],1)
+n_orders=simulate_number_of_orders_in_a_day(df_number_of_orders_to_deliver['Number_of_orders_delivered'].values,df_number_of_orders_to_deliver['count'].values,1)
 
 
 #Second Simulate the number of products in each order
