@@ -3,7 +3,7 @@ from scipy.stats import gaussian_kde
 import numpy as np
 import math
 import time
-
+import json
 class PseudoRandomNumberGenerator:
     def __init__(self):
         # Parameters for LCG (values from Numerical Recipes)
@@ -114,3 +114,72 @@ def simulate_number_of_orders_in_a_day(x_n_orders,weights,n_samples):
     # Generate a sample of size 1000
     samples =  self_rv.sample(n_samples)
     return np.int16(samples) 
+
+
+
+def calculate_volume_for_each_order(product_id_for_each_order, json_file_path='product_dimensions.json'):
+    """
+    Calculate the volume for each product in an order using a precomputed JSON dictionary
+    """
+    # Load the precomputed dictionary from JSON
+    with open(json_file_path, 'r') as json_file:
+        product_dimensions = json.load(json_file)
+    
+    # Calculate volumes
+    volume_for_each_order = [
+        [product_dimensions[product_id]['length'] *
+         product_dimensions[product_id]['height'] *
+         product_dimensions[product_id]['width']
+         for product_id in order]
+        for order in product_id_for_each_order
+    ]
+    
+    return volume_for_each_order
+
+def loading_truck_algorithm(TRUCK_CAPACITY,volume_for_each_order): 
+    """
+    This functions loads the orders into a truck. First it finds the number of trucks necessary to deliver the orders of the day based on the TRUCK_CAPACITY.
+    It returns the a list containing the number of orders each truck will deliver.
+    """
+    trucks = []  # List to store loaded trucks
+    current_truck = []  # Current truck's orders
+    current_capacity = TRUCK_CAPACITY  # Remaining capacity in the current truck
+
+    for i in range(len(volume_for_each_order)):
+        order=volume_for_each_order[i]
+        total_order_volume = sum(order)
+        
+        # Check if the order fits in the current truck
+        if total_order_volume <= current_capacity:
+            # Add order to the current truck
+            current_truck.append(i+1)
+            current_capacity -= total_order_volume
+        else:
+            # If it doesn't fit, start a new truck
+            trucks.append(current_truck)
+            current_truck = [i]  # Start the new truck with this order
+            current_capacity = TRUCK_CAPACITY - total_order_volume
+
+    # Append the last truck to the list
+    if current_truck:
+        trucks.append(current_truck)
+    # this list contains the number of orders each truck will deliver
+    number_of_orders_each_truck_will_deliver = [len(trucks[0]) - 1 if i == 0 else len(sublist) for i, sublist in enumerate(trucks)]
+    return number_of_orders_each_truck_will_deliver
+
+def calculate_distance_matrix_for_each_truck(number_of_orders_each_truck_will_deliver,distance_matrix_simulation_DC):
+    """
+    This function creates a distance matrix for each truck based on the numbers of orders each truck will deliver given
+    by the loading algorithm.
+    """
+    start_idx = 1  # Start after the distribution center (index 0)
+    truck_matrices = []
+
+    # Generate distance matrices for each truck
+    for num_deliveries in number_of_orders_each_truck_will_deliver:
+        truck_indices = [0] + list(range(start_idx, start_idx + num_deliveries))
+        truck_matrix = distance_matrix_simulation_DC[np.ix_(truck_indices, truck_indices)]
+        truck_matrices.append(truck_matrix)
+        start_idx += num_deliveries
+    
+    return truck_matrices
