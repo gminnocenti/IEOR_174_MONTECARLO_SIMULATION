@@ -183,3 +183,136 @@ def calculate_distance_matrix_for_each_truck(number_of_orders_each_truck_will_de
         start_idx += num_deliveries
     
     return truck_matrices
+def ant_colony_vrp(distance_matrix, alpha, beta, num_ants, evaporation_rate, num_iterations):
+    """
+    This is the vrp algorithm we used for the simulation
+    """
+    # Number of locations (including the starting depot)
+    num_locations = len(distance_matrix)
+    
+    # Initialize pheromone matrix with a small constant value
+    pheromone_matrix = np.full((num_locations, num_locations), 1.0)
+
+    # Ant paths and distances
+    best_route = None
+    best_route_length = float('inf')
+
+    # Main ACO loop
+    for iteration in range(num_iterations):
+        # Track all ant routes for this iteration
+        all_routes = []
+        all_distances = []
+
+        for ant in range(num_ants):
+            # Randomly select starting point (distribution center)
+            current_location = 0  # Assuming 0 is the depot index
+            visited = {current_location}
+            route = [current_location]
+            total_distance = 0
+
+            # Construct the ant's route
+            for step in range(num_locations - 1):
+                # Calculate probabilities for the next location
+                probabilities = []
+                for next_location in range(num_locations):
+                    if next_location not in visited:
+                        pheromone_level = pheromone_matrix[current_location][next_location]
+                        heuristic_value = 1 / (distance_matrix[current_location][next_location] + 1e-10)  # Avoid division by zero
+                        probability = (pheromone_level ** alpha) * (heuristic_value ** beta)
+                        probabilities.append((next_location, probability))
+                
+                # Normalize probabilities
+                total_prob = sum(prob for _, prob in probabilities)
+                probabilities = [(loc, prob / total_prob) for loc, prob in probabilities]
+                
+                # Choose the next location based on the probabilities
+                next_location = np.random.choice([loc for loc, _ in probabilities],
+                                                 p=[prob for _, prob in probabilities])
+
+                # Update route and distances
+                route.append(next_location)
+                total_distance += distance_matrix[current_location][next_location]
+                visited.add(next_location)
+                current_location = next_location
+
+            # Return to the depot to complete the route
+            route.append(0)
+            total_distance += distance_matrix[current_location][0]
+
+            # Save the route and distance
+            all_routes.append(route)
+            all_distances.append(total_distance)
+
+            # Update the best solution if this route is shorter
+            if total_distance < best_route_length:
+                best_route_length = total_distance
+                best_route = route
+
+        # Pheromone evaporation
+        pheromone_matrix *= (1 - evaporation_rate)
+
+        # Update pheromone matrix based on the routes found
+        for route, distance in zip(all_routes, all_distances):
+            pheromone_to_add = 1.0 / (distance + 1e-10)  
+            for i in range(len(route) - 1):
+                from_loc = route[i]
+                to_loc = route[i + 1]
+                pheromone_matrix[from_loc][to_loc] += pheromone_to_add
+                pheromone_matrix[to_loc][from_loc] += pheromone_to_add  # For symmetric distances
+
+        # Print progress
+
+    return best_route_length
+
+def calculate_time(distance_km,SPEED_KMH):
+    return distance_km / SPEED_KMH
+
+# Simulation function
+def calculate_vrp(distance_matrices, N_TRUCKS,SPEED_KMH,WORK_HOURS_PER_DAY):
+    """
+    This function calculates the vrp algorithm for each distance matrix for each truck of the specific orders to deliver in a day.
+    """
+    total_distance = 0
+    truck_availability = [0] * N_TRUCKS  # Initialize truck availability with 0 hours used for all trucks
+    number_completed_trips=0
+    number_uncompleted_trips=0
+    number_of_completed_orders=0
+    number_of_uncompleted_orders=0
+    total_distance_completed_orders=0
+    total_distance_uncompleted_orders=0
+    total_time_completed_orders=0
+    total_time_uncompleted_orders=0
+    for i, matrix in enumerate(distance_matrices):
+        
+        
+        # Find the next available truck
+        truck_idx = truck_availability.index(min(truck_availability))
+        
+        # Calculate the trip distance using the VRP algorithm
+        trip_distance = ant_colony_vrp(matrix, alpha=1, beta=1, num_ants=10, evaporation_rate=0.5, num_iterations=100)
+        trip_time = calculate_time(trip_distance,SPEED_KMH)
+        
+        # Check if the trip fits within the daily constraint of work hours for any truck
+        if truck_availability[truck_idx] + trip_time <= WORK_HOURS_PER_DAY:
+            # Assign the trip to the truck
+            truck_availability[truck_idx] += trip_time
+            total_distance += trip_distance
+            number_completed_trips+=1
+            number_of_completed_orders+=len(matrix)
+            total_time_completed_orders+=trip_time
+            total_distance_completed_orders+= trip_distance
+
+        else:
+            # trips that can't be delivered in the day
+            number_uncompleted_trips+=1
+            number_of_uncompleted_orders+=len(matrix)
+            total_distance_uncompleted_orders+= trip_distance
+            total_time_uncompleted_orders+=trip_time
+            # Skip this trip but continue to process subsequent trips
+
+
+    average_distance_for_successfull_orders=total_distance_completed_orders/number_completed_trips
+    average_time_for_successfull_orders=total_time_completed_orders/number_completed_trips
+
+    results=[number_completed_trips,number_uncompleted_trips,number_of_completed_orders,number_of_uncompleted_orders,total_distance_completed_orders,total_distance_uncompleted_orders,total_time_completed_orders,total_time_uncompleted_orders,average_distance_for_successfull_orders,average_time_for_successfull_orders]
+    return results
