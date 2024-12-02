@@ -39,9 +39,9 @@ The simulation uses the [Brazilian E-Commerce Dataset](https://www.kaggle.com/da
 ## Setup Instructions
 
 1. Clone this repository:
-   - git clone https://github.com/yourusername/montecarlo-distribution-center.git
-   - cd montecarlo-distribution-center
-
+```
+git clone https://github.com/gminnocenti/IEOR_174_MONTECARLO_SIMULATION.git
+```
 2. Install the required Python libraries in your virtual environment:
 ```
    pip install -r requirements.txt
