@@ -42,12 +42,15 @@ The simulation uses the [Brazilian E-Commerce Dataset](https://www.kaggle.com/da
    - git clone https://github.com/yourusername/montecarlo-distribution-center.git
    - cd montecarlo-distribution-center
 
-2. Install the required Python libraries:
-   - pip install -r requirements.txt
+2. Install the required Python libraries in your virtual environment:
+```
+   pip install -r requirements.txt
+```
 
 3. Run the simulation:
-   - python simulation_main.py
-
+```
+python simulation_main.py
+```
 ## File Structure
 
 - simulation_main.py: Main script to execute the Monte Carlo simulation.
